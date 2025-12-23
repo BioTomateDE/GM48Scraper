@@ -3,19 +3,6 @@
 version = 4
 
 [[package]]
-name = "GM48Scraper"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "humansize",
- "reqwest",
- "sanitize-filename",
- "scraper",
- "tokio",
- "zip",
-]
-
-[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -130,6 +117,16 @@ checksum = "773f3b9af64447d2ce9850330c473515014aa235e6a783b02db81ff39e4a3dad"
 dependencies = [
  "crypto-common",
  "inout",
+]
+
+[[package]]
+name = "colored-print"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "654f05b5b474d76ec51b5c42c2465172d453fe04dbaabf6c35a9a8ba6de69b53"
+dependencies = [
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -477,6 +474,21 @@ dependencies = [
  "libc",
  "r-efi",
  "wasip2",
+]
+
+[[package]]
+name = "gm48-scraper"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "colored-print",
+ "humansize",
+ "reqwest",
+ "sanitize-filename",
+ "scraper",
+ "tokio",
+ "urlencoding",
+ "zip",
 ]
 
 [[package]]
@@ -1852,6 +1864,12 @@ dependencies = [
  "percent-encoding",
  "serde",
 ]
+
+[[package]]
+name = "urlencoding"
+version = "2.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "utf-8"
