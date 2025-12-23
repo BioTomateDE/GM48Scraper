@@ -4,7 +4,7 @@ use colored_print::cprintln;
 use reqwest::{Client, Url};
 use scraper::Selector;
 use std::fs;
-use std::io::{Cursor};
+use std::io::Cursor;
 use std::path::Path;
 use zip::ZipArchive;
 

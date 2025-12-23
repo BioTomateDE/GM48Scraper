@@ -1,19 +1,19 @@
+mod cli;
 mod scrape;
 mod util;
 
 use crate::scrape::{download_game, get_games, get_jams, get_windows_download_url};
 use crate::util::{extract_meta_from_game_url, mkdir, print_error, sanitize_filename};
 use anyhow::{Context, Result};
+use clap::Parser;
 use colored_print::cprintln;
 use reqwest::Client;
-use std::path::PathBuf;
 use std::process::exit;
 
-async fn run() -> Result<()> {
+async fn run(args: cli::Args) -> Result<()> {
     let client = &Client::new();
 
-    let dir = PathBuf::from("./gm48_datafiles"); // TODO dynamic, use clap (?)
-    mkdir(&dir)?;
+    mkdir(&args.directory)?;
 
     let jams = get_jams(client)
         .await
@@ -32,7 +32,7 @@ async fn run() -> Result<()> {
             let game = urlencoding::decode(game)?;
             let filename = format!("{jam}_{game}.win");
             let filename = sanitize_filename(&filename);
-            let path = dir.join(filename);
+            let path = args.directory.join(filename);
 
             if path.exists() {
                 cprintln!("%y:Skipping download for {game_url}: %Y:File already exists");
@@ -59,7 +59,8 @@ async fn run() -> Result<()> {
 
 #[tokio::main]
 async fn main() {
-    if let Err(e) = run().await {
+    let args = cli::Args::parse();
+    if let Err(e) = run(args).await {
         print_error(e);
         exit(1);
     }
