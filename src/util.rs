@@ -1,5 +1,5 @@
 use anyhow::{Context, Error, Result};
-use colored_print::{ceprintln, cprintln};
+use colored_print::ceprintln;
 use reqwest::{Client, Url};
 use scraper::{ElementRef, Html};
 use std::fs;
