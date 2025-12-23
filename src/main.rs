@@ -2,13 +2,14 @@ mod scrape;
 mod util;
 
 use crate::scrape::{download_game, get_games, get_jams, get_windows_download_url};
-use crate::util::{extract_meta_from_game_url, mkdir, sanitize_filename};
+use crate::util::{extract_meta_from_game_url, mkdir, print_error, sanitize_filename};
 use anyhow::{Context, Result};
+use colored_print::cprintln;
 use reqwest::Client;
 use std::path::PathBuf;
+use std::process::exit;
 
-#[tokio::main]
-async fn main() -> Result<()> {
+async fn run() -> Result<()> {
     let client = &Client::new();
 
     let dir = PathBuf::from("./gm48_datafiles"); // TODO dynamic, use clap (?)
@@ -17,23 +18,24 @@ async fn main() -> Result<()> {
     let jams = get_jams(client)
         .await
         .context("Could not get list of Game Jams")?;
-    println!("Got {} game jams", jams.len());
+    cprintln!("%d^Got {} game jams", jams.len());
 
     for game_jam_url in jams {
-        println!("Downloading games from {game_jam_url}");
+        cprintln!("%G:Downloading games from Game Jam {game_jam_url}");
         let games = get_games(client, game_jam_url)
             .await
             .context("Could not get list of games in Game Jam")?;
-        println!("Got {} games", games.len());
+        cprintln!("%d^Got {} games", games.len());
 
         for game_url in games {
             let (jam, game) = extract_meta_from_game_url(&game_url)?;
+            let game = urlencoding::decode(game)?;
             let filename = format!("{jam}_{game}.win");
             let filename = sanitize_filename(&filename);
             let path = dir.join(filename);
 
             if path.exists() {
-                println!("Skipping download for {game_url}: File already exists");
+                cprintln!("%y:Skipping download for {game_url}: %Y:File already exists");
                 continue;
             }
 
@@ -41,7 +43,9 @@ async fn main() -> Result<()> {
                 .await
                 .context("Could not get download URL for Windows")?;
             let Some(url) = download_url else {
-                println!("Skipping download for {game_url}: Game does not have a Windows download");
+                cprintln!(
+                    "%y:Skipping download for %_:{game_url}%y:: %Y:Game does not have a Windows download"
+                );
                 continue;
             };
 
@@ -49,6 +53,14 @@ async fn main() -> Result<()> {
         }
     }
 
-    println!("All games downloaded!");
+    cprintln!("%G:%b^All games downloaded!");
     Ok(())
+}
+
+#[tokio::main]
+async fn main() {
+    if let Err(e) = run().await {
+        print_error(e);
+        exit(1);
+    }
 }

@@ -1,9 +1,10 @@
-use crate::util::{get_href, get_html, get_url, print_archive_structure};
+use crate::util::{get_href, get_html, get_url, print_archive_structure, print_error};
 use anyhow::{Context, Result, bail};
+use colored_print::cprintln;
 use reqwest::{Client, Url};
 use scraper::Selector;
 use std::fs;
-use std::io::Cursor;
+use std::io::{Cursor};
 use std::path::Path;
 use zip::ZipArchive;
 
@@ -30,7 +31,7 @@ pub async fn get_jams(client: &Client) -> Result<Vec<Url>> {
 pub async fn get_games(client: &Client, jam_url: Url) -> Result<Vec<Url>> {
     let html = get_html(client, jam_url).await?;
 
-    let selector = " #games .single-game > a";
+    let selector = "#games .single-game > a";
     let selector = Selector::parse(selector).unwrap();
     let mut game_links = Vec::new();
 
@@ -59,7 +60,7 @@ pub async fn get_windows_download_url(client: &Client, game_url: Url) -> Result<
 }
 
 pub async fn download_game(client: &Client, download_url: Url, file_path: &Path) -> Result<()> {
-    println!("Downloading {download_url}");
+    cprintln!("Downloading game %d^{download_url}");
 
     let resp = client.get(download_url).send().await?;
     resp.error_for_status_ref()?;
@@ -67,12 +68,17 @@ pub async fn download_game(client: &Client, download_url: Url, file_path: &Path)
 
     let size = bytes.len();
     let human_size = humansize::format_size(size, humansize::BINARY);
-    println!("Downloaded {human_size} ({size} bytes)");
+    cprintln!("%B:Downloaded %u^{human_size}%_^ (%u^{size}%_^ bytes)");
 
-    let data_file_content =
-        tokio::task::spawn_blocking(move || extract_datafile_from_zip(&bytes)).await??;
-
-    fs::write(file_path, data_file_content)?;
+    let result = tokio::task::spawn_blocking(move || extract_datafile_from_zip(&bytes)).await?;
+    match result {
+        Ok(data_file_content) => {
+            fs::write(file_path, data_file_content)?;
+        }
+        Err(err) => {
+            print_error(err);
+        }
+    }
     Ok(())
 }
 
@@ -82,7 +88,13 @@ fn extract_datafile_from_zip(data: &[u8]) -> Result<Vec<u8>> {
 
     for i in 0..archive.len() {
         let mut file = archive.by_index(i)?;
-        if file.name() != "data.win" {
+        if file.is_dir() {
+            continue;
+        }
+
+        let filename = file.name();
+        let filename = filename.rsplit_once("/").map_or(filename, |x| x.1);
+        if filename != "data.win" {
             continue;
         }
 
@@ -96,8 +108,7 @@ fn extract_datafile_from_zip(data: &[u8]) -> Result<Vec<u8>> {
     }
 
     // TODO: handle SFX (self extracting exe)
-    // either interface 7zip to decompress them?
-    // or just skip them lol
+    //       interface 7zip to decompress them?
 
     // Failed to find file, print directory for debugging and exit
     print_archive_structure(&mut archive);

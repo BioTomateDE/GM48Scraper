@@ -1,10 +1,18 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Error, Result};
+use colored_print::{ceprintln, cprintln};
 use reqwest::{Client, Url};
 use scraper::{ElementRef, Html};
 use std::fs;
 use std::io::{ErrorKind, Read, Seek};
 use std::path::Path;
 use zip::ZipArchive;
+
+pub fn print_error(error: Error) {
+    ceprintln!("%r:Error: %R:%b^{error}");
+    for cause in error.chain().skip(1) {
+        ceprintln!("%r:caused by: %R:{cause}");
+    }
+}
 
 pub fn get_url(relative_url: &str) -> Result<Url> {
     const BASE_URL: &str = "https://gm48.net";
@@ -51,7 +59,7 @@ pub fn mkdir(path: &Path) -> Result<()> {
 }
 
 pub fn print_archive_structure<T: Seek + Read>(archive: &mut ZipArchive<T>) {
-    println!("\n======= ZIP Archive structure =======");
+    ceprintln!("\n%b^======== %M:ZIP Archive Structure%_: ========");
     for i in 0..archive.len() {
         let file = archive.by_index(i).unwrap();
         let name = file.name();
@@ -63,13 +71,13 @@ pub fn print_archive_structure<T: Seek + Read>(archive: &mut ZipArchive<T>) {
             (false, false) => "file",
         };
 
-        println!("[{ty}] {name:?}");
+        ceprintln!("[{ty}] %b:{name:?}");
     }
-    println!();
+    eprintln!();
 }
 
 pub fn sanitize_filename(filename: &str) -> String {
-    let options = sanitize_filename::Options{
+    let options = sanitize_filename::Options {
         windows: true,
         truncate: true,
         replacement: "_",
