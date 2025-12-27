@@ -1,11 +1,11 @@
 use crate::error::{Result, bail};
 use crate::{html, url};
-use reqwest::{Client, Url};
+use reqwest::Url;
 use scraper::Selector;
 
-pub async fn scrape(client: &Client) -> Result<Vec<Url>> {
+pub async fn scrape() -> Result<Vec<Url>> {
     let url = url::get("game-jams/top-down/games")?;
-    let html = html::get(client, url).await?;
+    let html = html::get(url).await?;
 
     let selector = "#jamModal .modal-body > .list-group > a";
     let selector = Selector::parse(selector).unwrap();

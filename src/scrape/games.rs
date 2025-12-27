@@ -1,10 +1,11 @@
 use crate::error::Result;
 use crate::html;
-use reqwest::{Client, Url};
+use reqwest::Url;
 use scraper::Selector;
 
-pub async fn scrape(client: &Client, jam_url: Url) -> Result<Vec<Url>> {
-    let html = html::get(client, jam_url).await?;
+pub async fn scrape(jam_url: Url) -> Result<Vec<Url>> {
+    println!("Scraping games from {jam_url}");
+    let html = html::get(jam_url.clone()).await?;
 
     let selector = "#games .single-game > a";
     let selector = Selector::parse(selector).unwrap();
@@ -18,5 +19,6 @@ pub async fn scrape(client: &Client, jam_url: Url) -> Result<Vec<Url>> {
     // This game list is allowed to be empty:
     // There could potentially be an ongoing game jam with no results yet.
 
+    println!("Got {} games from {}", game_links.len(), jam_url);
     Ok(game_links)
 }

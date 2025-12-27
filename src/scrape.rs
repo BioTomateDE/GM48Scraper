@@ -6,50 +6,66 @@ use crate::error::{Context, Result};
 use crate::io::mkdir;
 use crate::{cli, url};
 use colored_print::cprintln;
-use reqwest::Client;
+use futures::stream::{self, StreamExt};
+use reqwest::{Client, Url};
+use std::path::PathBuf;
+use std::sync::LazyLock;
+
+const BATCH_SIZE: usize = 6;
+pub static CLIENT: LazyLock<Client> = LazyLock::new(|| Client::new());
 
 pub async fn data_files(args: cli::Args) -> Result<()> {
-    let client = &Client::new();
-
     mkdir(&args.directory)?;
 
-    let jams = game_jams::scrape(client)
+    let game_jam_urls = game_jams::scrape()
         .await
-        .context("Could not get list of Game Jams")?;
-    cprintln!("%d^Got {} game jams", jams.len());
+        .context("getting list of game jams")?;
+    cprintln!("%d^Got {} game jams", game_jam_urls.len());
 
-    for game_jam_url in jams {
-        cprintln!("%G:Downloading games from Game Jam {game_jam_url}");
-        let games = games::scrape(client, game_jam_url)
-            .await
-            .context("Could not get list of games in Game Jam")?;
-        cprintln!("%d^Got {} games", games.len());
+    let game_urls: Vec<Url> = stream::iter(game_jam_urls)
+        .map(|url| games::scrape(url))
+        .buffer_unordered(BATCH_SIZE)
+        .filter_map(|result| async { result.ok() })
+        .flat_map(stream::iter)
+        .collect()
+        .await;
+    cprintln!("%d^Got {} games in total", game_urls.len());
 
-        for game_url in games {
-            let (jam, game) = url::extract_meta(&game_url)?;
-            let game = urlencoding::decode(game)?;
-            let filename = format!("{jam}_{game}.win");
-            let path = args.directory.join(filename);
-
-            if path.exists() {
-                cprintln!("%y:Skipping download for {game_url}: %Y:File already exists");
-                continue;
-            }
-
-            let download_url = download::windows_url(client, game_url.clone())
-                .await
-                .context("Could not get download URL for Windows")?;
-            let Some(url) = download_url else {
-                cprintln!(
-                    "%y:Skipping download for %_:{game_url}%y:: %Y:Game does not have a Windows download"
-                );
-                continue;
-            };
-
-            download::game(client, url, &path).await?;
-        }
-    }
+    let _: Vec<()> = stream::iter(game_urls)
+        .map(|url| handle_game_wrapper(url, args.directory.clone()))
+        .buffer_unordered(BATCH_SIZE) // max 5 concurrent
+        .collect()
+        .await;
 
     cprintln!("%G:%b^All games downloaded!");
     Ok(())
+}
+
+async fn handle_game_wrapper(url: Url, dir: PathBuf) {
+    if let Err(e) = handle_game(url, dir).await {
+        cprintln!("%R:{}", e.chain());
+    }
+}
+
+async fn handle_game(url: Url, dir: PathBuf) -> Result<()> {
+    let (jam, game) = url::extract_meta(&url)?;
+    let game = urlencoding::decode(game)?;
+    let filename = format!("{jam}_{game}.win");
+    let path = dir.join(filename);
+
+    if path.exists() {
+        cprintln!("%y:Skipping download for {url}: %Y:File already exists");
+        return Ok(());
+    }
+
+    let download_url = download::windows_url(url.clone())
+        .await
+        .context("getting download URL for Windows")?;
+
+    let Some(url) = download_url else {
+        cprintln!("%y:Skipping download for %_:{url}%y:: %Y:Game does not have a Windows download");
+        return Ok(());
+    };
+
+    download::game(url, &path).await
 }

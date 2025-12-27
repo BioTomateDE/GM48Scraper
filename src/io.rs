@@ -8,6 +8,6 @@ pub fn mkdir(path: &Path) -> Result<()> {
     match fs::create_dir(path) {
         Ok(()) => Ok(()),
         Err(e) if e.kind() == ErrorKind::AlreadyExists => Ok(()),
-        Err(e) => Err(e).context("Could not create directory"),
+        Err(e) => Err(e).with_context(|| format!("creating directory {path:?}")),
     }
 }

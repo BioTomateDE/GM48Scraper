@@ -21,7 +21,9 @@ pub fn data_file(data: &[u8]) -> Result<Vec<u8>> {
         let size: usize = file
             .size()
             .try_into()
-            .context("File is too massive for this poor architecture")?;
+            .map_err(|e| format!("File is too massive for this poor architecture: {e}"))
+            .context("getting size of ZIP file")?;
+
         let mut content = Vec::with_capacity(size);
         std::io::copy(&mut file, &mut content)?;
         return Ok(content);

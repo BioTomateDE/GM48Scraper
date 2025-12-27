@@ -29,9 +29,9 @@ impl Error {
 
     #[must_use]
     pub fn chain(&self) -> String {
-        let mut output = self.message.clone();
+        let mut output = self.message.clone() + "\n";
         for context in &self.context {
-            let _ = write!(output, "\n> while {context}");
+            let _ = writeln!(output, "> while {context}");
         }
         output
     }
