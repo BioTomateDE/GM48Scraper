@@ -10,7 +10,7 @@ use reqwest::{Client, Url};
 use std::path::PathBuf;
 use std::sync::LazyLock;
 
-const BATCH_SIZE: usize = 6;
+const BATCH_SIZE: usize = 8;
 pub static CLIENT: LazyLock<Client> = LazyLock::new(Client::new);
 
 pub async fn data_files(args: cli::Args) -> Result<()> {
@@ -47,8 +47,8 @@ async fn handle_game_wrapper(url: Url, dir: PathBuf) {
     }
 }
 
-async fn handle_game(url: Url, dir: PathBuf) -> Result<()> {
-    let (jam, game) = url::extract_meta(&url)?;
+async fn handle_game(game_url: Url, dir: PathBuf) -> Result<()> {
+    let (jam, game) = url::extract_meta(&game_url)?;
     let game = urlencoding::decode(game)?;
     let filename = format!("{jam}_{game}.win");
     let path = dir.join(filename);
@@ -58,14 +58,7 @@ async fn handle_game(url: Url, dir: PathBuf) -> Result<()> {
         return Ok(());
     }
 
-    let download_url = download::windows_url(url.clone())
-        .await
-        .context("getting download URL for Windows")?;
+    let download_url = Url::parse(&format!("{game_url}/download/windows"))?;
 
-    let Some(url) = download_url else {
-        cprintln!("%y:Skipping download for %_:{url}%y:: %Y:Game does not have a Windows download");
-        return Ok(());
-    };
-
-    download::game(url, &path).await
+    download::game(download_url, &path).await
 }
