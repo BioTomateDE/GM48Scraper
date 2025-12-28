@@ -19,7 +19,7 @@ pub async fn data_files(args: cli::Args) -> Result<()> {
     let game_jam_urls = game_jams::scrape()
         .await
         .context("getting list of game jams")?;
-    cprintln!("%d^Got {} game jams", game_jam_urls.len());
+    cprintln!("%C:Got {} game jams", game_jam_urls.len());
 
     let mut game_urls: Vec<Url> = stream::iter(game_jam_urls)
         .map(games::scrape)
@@ -54,7 +54,7 @@ async fn handle_game(url: Url, dir: PathBuf) -> Result<()> {
     let path = dir.join(filename);
 
     if path.exists() {
-        cprintln!("%y:Skipping download for {url}: %Y:File already exists");
+        //cprintln!("%y:Skipping download for {url}: %Y:File already exists");
         return Ok(());
     }
 

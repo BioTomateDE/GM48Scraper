@@ -1,2 +1,117 @@
-pub mod extract;
-pub mod print;
+use colored_print::ceprintln;
+
+use crate::error::{Context, Result, bail};
+use std::{fmt::Display, io::Cursor};
+
+/// Taken from <https://forum.gamemaker.io/index.php?threads/summary-of-gms-file-extensions.82460/>
+const KNOWN_GM_EXTENSIONS: &[&str] = &[
+    "gm81", "gmez", "gml", "gmk", "gmx", "gmz", "yy", "yymp", "yymps", "yyp", "yyz",
+];
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Kind {
+    Zip,
+    Rar,
+    SevenZip,
+    PackedExe,
+}
+
+impl Display for Kind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let string = match self {
+            Kind::Zip => "ZIP",
+            Kind::Rar => "Rar",
+            Kind::SevenZip => "7Zip",
+            Kind::PackedExe => "Packed EXE",
+        };
+        write!(f, "{string}")
+    }
+}
+
+/// Extract the GameMaker data file from an archive in memory.
+pub fn find_data_file(archive_data: &[u8], kind: Kind) -> Result<Vec<u8>> {
+    let files: Vec<String> = list_files(archive_data)?;
+
+    for file_path in &files {
+        let filename = get_filename(file_path);
+        let extension = get_extension(filename).to_ascii_lowercase();
+
+        // Hey, that's the one we want!
+        if filename == "data.win" {
+            return extract_file(archive_data, file_path);
+        }
+
+        if KNOWN_GM_EXTENSIONS.contains(&extension.as_str()) {
+            // Uploader has a skill issue, nothing I can do about that
+            bail!("Found incorrectly uploaded GameMaker project in Windows download");
+        }
+
+        if extension == "zip" {
+            let zip_archive = extract_file(archive_data, file_path)?;
+            return find_data_file(&zip_archive, Kind::Zip)
+                .with_context(|| format!("extracting inner ZIP archive {file_path:?}"));
+        }
+
+        if extension == "rar" {
+            // Some uploaders put rar files into zip files for some reason
+            let rar_archive = extract_file(archive_data, file_path)?;
+            return find_data_file(&rar_archive, Kind::Rar)
+                .with_context(|| format!("extracting rar archive {file_path:?}"));
+        }
+
+        if kind == Kind::PackedExe && filename == "data" {
+            // This is a common "filename" for packed installers.
+            // Installers are useless to me; I need runners.
+            bail!("Found installer instead of runner in packed .exe file (useless)");
+        }
+    }
+
+    // Couldn't find data.win, try finding inner archives
+    for file_path in &files {
+        let extension = get_extension(file_path).to_ascii_lowercase();
+        let kind = match extension.as_str() {
+            "zip" => Kind::Zip,
+            "rar" => Kind::Rar,
+            "7z" => Kind::SevenZip,
+            "exe" => Kind::PackedExe,
+            _ => continue,
+        };
+        let inner_archive = extract_file(archive_data, file_path)?;
+        return find_data_file(&inner_archive, kind)
+            .with_context(|| format!("extracting inner {kind} archive {file_path:?}"));
+    }
+
+    print_structure(&files, kind);
+    bail!("Could not find data.win file in archive");
+}
+
+fn list_files(archive_data: &[u8]) -> Result<Vec<String>> {
+    compress_tools::list_archive_files(&mut Cursor::new(archive_data))
+        .context("listing archive files")
+}
+
+fn extract_file(archive_data: &[u8], file_path: &str) -> Result<Vec<u8>> {
+    let mut cursor = Cursor::new(archive_data);
+    let mut output = Vec::new();
+
+    compress_tools::uncompress_archive_file(&mut cursor, &mut output, file_path)
+        .with_context(|| format!("Failed to extract file {file_path:?}"))?;
+
+    Ok(output)
+}
+
+fn get_filename(file_path: &str) -> &str {
+    file_path.split('/').next_back().unwrap_or(file_path)
+}
+
+fn get_extension(filename: &str) -> &str {
+    filename.split('.').next_back().unwrap_or(filename)
+}
+
+fn print_structure(files: &[String], kind: Kind) {
+    ceprintln!("\n%b^========%M: {kind} Archive Structure%_: ========");
+    for path in files {
+        ceprintln!("%b:{path:?}");
+    }
+    eprintln!();
+}
