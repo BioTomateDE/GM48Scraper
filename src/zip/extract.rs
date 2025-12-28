@@ -12,8 +12,14 @@ pub fn data_file(data: &[u8]) -> Result<Vec<u8>> {
             continue;
         }
 
-        let filename = file.name();
-        let filename = filename.rsplit_once("/").map_or(filename, |x| x.1);
+        let filename = get_filename(file.name());
+        let extension = get_extension(filename);
+
+        // Don't bother if it's an incorrectly uploaded GameMaker project
+        if extension == "yyp" {
+            bail!("Found .ypp file in Windows download; skipping incorrectly uploaded game assets");
+        }
+
         if filename != "data.win" {
             continue;
         }
@@ -35,4 +41,16 @@ pub fn data_file(data: &[u8]) -> Result<Vec<u8>> {
     // Failed to find file, print directory for debugging and exit
     super::print::archive_structure(&mut archive);
     bail!("Could not find a data file in ZIP archive");
+}
+
+fn get_filename(file_path: &str) -> &str {
+    last_part(file_path, "/")
+}
+
+fn get_extension(filename: &str) -> &str {
+    last_part(filename, ".")
+}
+
+fn last_part<'a>(string: &'a str, delimiter: &str) -> &'a str {
+    string.rsplit_once(delimiter).map_or(string, |(_, s)| s)
 }
