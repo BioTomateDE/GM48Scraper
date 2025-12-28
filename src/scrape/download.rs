@@ -1,7 +1,7 @@
 use crate::error::{Context, Result};
 use crate::scrape::CLIENT;
-use crate::{html, zip};
-use colored_print::cprintln;
+use crate::{archive, html};
+use colored_print::{ceprintln, cprintln};
 use reqwest::{Response, Url};
 use scraper::Selector;
 use std::fs;
@@ -43,7 +43,7 @@ pub async fn game(download_url: Url, file_path: &Path) -> Result<()> {
     let human_size = humansize::format_size(size, humansize::BINARY);
     cprintln!("%B:Downloaded %u^{human_size}%_^ ({size} bytes)");
 
-    let task = tokio::task::spawn_blocking(move || zip::extract::data_file(&bytes));
+    let task = tokio::task::spawn_blocking(move || archive::extract::find_data_file(&bytes));
     let result = task
         .await
         .context("extracting downloaded ZIP archive")
@@ -55,7 +55,8 @@ pub async fn game(download_url: Url, file_path: &Path) -> Result<()> {
                 .with_context(ctx)?;
         }
         Err(err) => {
-            eprintln!("{}", err.chain());
+            let err = err.chain();
+            ceprintln!("Could not find datafile for download {download_url}:\n%R:{err}");
         }
     }
     Ok(())

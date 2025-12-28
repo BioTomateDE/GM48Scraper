@@ -3,7 +3,6 @@ mod game_jams;
 mod games;
 
 use crate::error::{Context, Result};
-use crate::io::mkdir;
 use crate::{cli, url};
 use colored_print::cprintln;
 use futures::stream::{self, StreamExt};
@@ -12,24 +11,25 @@ use std::path::PathBuf;
 use std::sync::LazyLock;
 
 const BATCH_SIZE: usize = 6;
-pub static CLIENT: LazyLock<Client> = LazyLock::new(|| Client::new());
+pub static CLIENT: LazyLock<Client> = LazyLock::new(Client::new);
 
 pub async fn data_files(args: cli::Args) -> Result<()> {
-    mkdir(&args.directory)?;
+    std::fs::create_dir_all(&args.directory).context("creating output directory")?;
 
     let game_jam_urls = game_jams::scrape()
         .await
         .context("getting list of game jams")?;
     cprintln!("%d^Got {} game jams", game_jam_urls.len());
 
-    let game_urls: Vec<Url> = stream::iter(game_jam_urls)
-        .map(|url| games::scrape(url))
+    let mut game_urls: Vec<Url> = stream::iter(game_jam_urls)
+        .map(games::scrape)
         .buffer_unordered(BATCH_SIZE)
         .filter_map(|result| async { result.ok() })
         .flat_map(stream::iter)
         .collect()
         .await;
-    cprintln!("%d^Got {} games in total", game_urls.len());
+    game_urls.sort();
+    cprintln!("%C:Got {} games in total", game_urls.len());
 
     let _: Vec<()> = stream::iter(game_urls)
         .map(|url| handle_game_wrapper(url, args.directory.clone()))
