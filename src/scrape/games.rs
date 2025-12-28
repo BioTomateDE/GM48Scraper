@@ -4,7 +4,6 @@ use reqwest::Url;
 use scraper::Selector;
 
 pub async fn scrape(jam_url: Url) -> Result<Vec<Url>> {
-    println!("Scraping games from {jam_url}");
     let html = html::get(jam_url.clone()).await?;
 
     let selector = "#games .single-game > a";
