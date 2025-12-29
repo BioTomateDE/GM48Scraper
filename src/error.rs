@@ -56,7 +56,6 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 pub trait Context<T> {
     fn context(self, context: impl Into<String>) -> Result<T>;
-    #[allow(unused)] // TODO remove if not needed
     fn with_context(self, f: impl FnOnce() -> String) -> Result<T>;
 }
 

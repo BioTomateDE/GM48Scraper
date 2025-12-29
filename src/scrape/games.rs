@@ -1,5 +1,6 @@
 use crate::error::Result;
 use crate::html;
+use colored_print::cprintln;
 use reqwest::Url;
 use scraper::Selector;
 
@@ -18,6 +19,7 @@ pub async fn scrape(jam_url: Url) -> Result<Vec<Url>> {
     // This game list is allowed to be empty:
     // There could potentially be an ongoing game jam with no results yet.
 
-    println!("Got {} games from {}", game_links.len(), jam_url);
+    let count = game_links.len();
+    cprintln!("Got %b^%B:{count}%__ games from %d^{jam_url}");
     Ok(game_links)
 }

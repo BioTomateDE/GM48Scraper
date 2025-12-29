@@ -12,7 +12,7 @@ use std::process::exit;
 #[tokio::main]
 async fn main() {
     let args = cli::Args::parse();
-    println!("Started program");
+    println!("Let the programme commence forth.");
     if let Err(e) = scrape::data_files(args).await {
         ceprintln!("Error: %R:{}", e.chain());
         exit(1);
