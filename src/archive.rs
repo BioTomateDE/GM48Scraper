@@ -4,6 +4,7 @@ use crate::error::{Context, Result, bail};
 use std::{fmt::Display, io::Cursor};
 
 /// Taken from <https://forum.gamemaker.io/index.php?threads/summary-of-gms-file-extensions.82460/>
+/// and extended a little bit.
 const KNOWN_GM_EXTENSIONS: &[&str] = &[
     "gm81", "gmez", "gml", "gmk", "gmx", "gmz", "yy", "yymp", "yymps", "yyp", "yyz",
 ];
@@ -20,9 +21,9 @@ impl Display for Kind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let string = match self {
             Kind::Zip => "ZIP",
-            Kind::Rar => "Rar",
+            Kind::Rar => "RAR",
             Kind::SevenZip => "7Zip",
-            Kind::PackedExe => "Packed EXE",
+            Kind::PackedExe => "packed .exe",
         };
         write!(f, "{string}")
     }
@@ -44,19 +45,6 @@ pub fn find_data_file(archive_data: &[u8], kind: Kind) -> Result<Vec<u8>> {
         if KNOWN_GM_EXTENSIONS.contains(&extension.as_str()) {
             // Uploader has a skill issue, nothing I can do about that
             bail!("Found incorrectly uploaded GameMaker project in Windows download");
-        }
-
-        if extension == "zip" {
-            let zip_archive = extract_file(archive_data, file_path)?;
-            return find_data_file(&zip_archive, Kind::Zip)
-                .with_context(|| format!("extracting inner ZIP archive {file_path:?}"));
-        }
-
-        if extension == "rar" {
-            // Some uploaders put rar files into zip files for some reason
-            let rar_archive = extract_file(archive_data, file_path)?;
-            return find_data_file(&rar_archive, Kind::Rar)
-                .with_context(|| format!("extracting rar archive {file_path:?}"));
         }
 
         if kind == Kind::PackedExe && filename == "data" {
