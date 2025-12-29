@@ -45,7 +45,7 @@ pub async fn game(url: Url, file_path: &Path) -> Result<()> {
                 .file_name()
                 .and_then(OsStr::to_str)
                 .unwrap_or("<unknown>");
-            cprintln!("%G:Sucessfully extracted data file to {name}");
+            cprintln!("%G:Sucessfully extracted data file to %g:{name}");
         }
         Err(err) => {
             let err = err.chain();

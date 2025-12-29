@@ -19,8 +19,9 @@ pub async fn data_files(args: cli::Args) -> Result<()> {
     let game_jam_urls = game_jams::scrape()
         .await
         .context("getting list of game jams")?;
-    cprintln!("%C:Got {} game jams", game_jam_urls.len());
+    cprintln!("%C:Got {} game jams.", game_jam_urls.len());
 
+    // TODO: handle errors?
     let mut game_urls: Vec<Url> = stream::iter(game_jam_urls)
         .map(games::scrape)
         .buffer_unordered(BATCH_SIZE)
@@ -29,11 +30,11 @@ pub async fn data_files(args: cli::Args) -> Result<()> {
         .collect()
         .await;
     game_urls.sort();
-    cprintln!("%C:Got {} games in total", game_urls.len());
+    cprintln!("%C:Got %b^{}%_^ games in total.", game_urls.len());
 
     let _: Vec<()> = stream::iter(game_urls)
         .map(|url| handle_game_wrapper(url, args.directory.clone()))
-        .buffer_unordered(BATCH_SIZE) // max 5 concurrent
+        .buffer_unordered(BATCH_SIZE)
         .collect()
         .await;
 
