@@ -10,7 +10,7 @@ use reqwest::{Client, Url};
 use std::path::PathBuf;
 use std::sync::LazyLock;
 
-const BATCH_SIZE: usize = 8;
+/// A reusable `reqwest` client instance.
 pub static CLIENT: LazyLock<Client> = LazyLock::new(Client::new);
 
 pub async fn data_files(args: cli::Args) -> Result<()> {
@@ -21,11 +21,13 @@ pub async fn data_files(args: cli::Args) -> Result<()> {
         .context("getting list of game jams")?;
     cprintln!("%C:Got {} game jams.", game_jam_urls.len());
 
+    let batch_size = usize::from(u8::from(args.jobs));
+
     // TODO: handle errors?
     let mut game_urls: Vec<Url> = stream::iter(game_jam_urls)
         .map(games::scrape)
-        .buffer_unordered(BATCH_SIZE)
-        .filter_map(|result| async { result.ok() })
+        .buffer_unordered(batch_size)
+        .filter_map(|result| async { result.ok() }) // this ignores errors
         .flat_map(stream::iter)
         .collect()
         .await;
@@ -34,7 +36,7 @@ pub async fn data_files(args: cli::Args) -> Result<()> {
 
     let _: Vec<()> = stream::iter(game_urls)
         .map(|url| handle_game_wrapper(url, args.directory.clone()))
-        .buffer_unordered(BATCH_SIZE)
+        .buffer_unordered(batch_size)
         .collect()
         .await;
 
@@ -44,13 +46,14 @@ pub async fn data_files(args: cli::Args) -> Result<()> {
 
 async fn handle_game_wrapper(url: Url, dir: PathBuf) {
     if let Err(e) = handle_game(url, dir).await {
-        cprintln!("%R:{}", e.chain());
+        e.print();
     }
 }
 
 async fn handle_game(game_url: Url, dir: PathBuf) -> Result<()> {
     let (jam, game) = url::extract_meta(&game_url)?;
-    let game = urlencoding::decode(game)?;
+    let jam = crate::filename::sanitize(jam);
+    let game = crate::filename::sanitize(game);
     let filename = format!("{jam}_{game}.win");
     let path = dir.join(filename);
 

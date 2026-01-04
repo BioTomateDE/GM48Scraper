@@ -35,6 +35,15 @@ impl Error {
         }
         output
     }
+
+    pub fn print(&self) {
+        colored_print::ceprintln!("Error: %R:{}", self.chain());
+    }
+
+    pub fn print_exit(&self) -> ! {
+        self.print();
+        std::process::exit(1);
+    }
 }
 
 impl Display for Error {
