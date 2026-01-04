@@ -22,7 +22,7 @@ impl Display for Kind {
         let string = match self {
             Kind::Zip => "ZIP",
             Kind::Rar => "RAR",
-            Kind::SevenZip => "7Zip",
+            Kind::SevenZip => "7-Zip",
             Kind::PackedExe => "packed .exe",
         };
         write!(f, "{string}")
@@ -44,13 +44,16 @@ pub fn find_data_file(archive_data: &[u8], kind: Kind) -> Result<Vec<u8>> {
 
         if KNOWN_GM_EXTENSIONS.contains(&extension.as_str()) {
             // Uploader has a skill issue, nothing I can do about that
-            bail!("Found incorrectly uploaded GameMaker project in Windows download");
+            bail!(
+                "Found incorrectly uploaded GameMaker project \
+                in Windows download (detected by file {filename:?})"
+            );
         }
 
         if kind == Kind::PackedExe && filename == "data" {
             // This is a common "filename" for packed installers.
             // Installers are useless to me; I need runners.
-            bail!("Found installer instead of runner in packed .exe file (useless)");
+            bail!("Packed .exe file is an installer instead of a runner");
         }
     }
 
@@ -69,6 +72,8 @@ pub fn find_data_file(archive_data: &[u8], kind: Kind) -> Result<Vec<u8>> {
             .with_context(|| format!("extracting inner {kind} archive {file_path:?}"));
     }
 
+    // Couldn't find data.win or inner archive.
+    // Print archive structure for debugging and throw.
     print_structure(&files, kind);
     bail!("Could not find data.win file in archive");
 }
@@ -88,12 +93,19 @@ fn extract_file(archive_data: &[u8], file_path: &str) -> Result<Vec<u8>> {
     Ok(output)
 }
 
+#[must_use]
 fn get_filename(file_path: &str) -> &str {
-    file_path.split('/').next_back().unwrap_or(file_path)
+    last_part(file_path, '/')
 }
 
+#[must_use]
 fn get_extension(filename: &str) -> &str {
-    filename.split('.').next_back().unwrap_or(filename)
+    last_part(filename, '.')
+}
+
+#[must_use]
+fn last_part(string: &str, delimiter: char) -> &str {
+    string.split(delimiter).next_back().unwrap_or(string)
 }
 
 fn print_structure(files: &[String], kind: Kind) {

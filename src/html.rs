@@ -1,4 +1,4 @@
-use crate::error::Context;
+use crate::error::{Context, Result};
 use crate::scrape::CLIENT;
 use reqwest::{Response, Url};
 use scraper::Html;
@@ -7,7 +7,7 @@ pub mod extract;
 
 /// Send a GET request to the specified URL
 /// and then extract the HTML of the response.
-pub async fn get(url: Url) -> crate::error::Result<Html> {
+pub async fn get(url: Url) -> Result<Html> {
     let text: String = CLIENT
         .get(url.clone())
         .send()
