@@ -1,18 +1,24 @@
 use crate::error::{Result, bail};
-use crate::{html, url};
+use crate::html::{extract_href, get_html};
+use crate::url::get_url;
 use reqwest::Url;
 use scraper::Selector;
+use std::sync::LazyLock;
+
+static SELECTOR: LazyLock<Selector> = LazyLock::new(make_selector);
+
+fn make_selector() -> Selector {
+    Selector::parse("#jamModal .modal-body > .list-group > a").unwrap()
+}
 
 pub async fn scrape() -> Result<Vec<Url>> {
-    let url = url::get("game-jams/top-down/games")?;
-    let html = html::get(url).await?;
+    let url = get_url("game-jams/top-down/games")?;
+    let html = get_html(url).await?;
 
-    let selector = "#jamModal .modal-body > .list-group > a";
-    let selector = Selector::parse(selector).unwrap();
     let mut game_jam_links = Vec::new();
 
-    for element in html.select(&selector) {
-        let href = html::extract::href(element)?;
+    for element in html.select(&SELECTOR) {
+        let href = extract_href(element)?;
         game_jam_links.push(href);
     }
 
@@ -21,4 +27,11 @@ pub async fn scrape() -> Result<Vec<Url>> {
     }
 
     Ok(game_jam_links)
+}
+
+mod tests {
+    #[test]
+    fn selector_is_valid() {
+        let _ = &*super::SELECTOR;
+    }
 }

@@ -1,9 +1,8 @@
+use colored_print::ceprintln;
 use std::borrow::Cow;
 
-use colored_print::ceprintln;
-
 #[must_use]
-pub fn sanitize(filename: &str) -> String {
+pub fn sanitize_filename(filename: &str) -> String {
     // URL-decode filename since it was extracted from a URL.
     // I don't want ten billion percents in my filename.
     let filename = urlencoding::decode(filename).unwrap_or_else(|e| {

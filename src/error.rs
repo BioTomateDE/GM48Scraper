@@ -1,6 +1,6 @@
-use std::fmt::{Display, Write};
+use std::fmt::{self, Write};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct Error {
     message: String,
     context: Vec<String>,
@@ -15,15 +15,15 @@ impl Error {
         }
     }
 
-    /// Add context in-place.
-    pub fn add_context(&mut self, context: impl Into<String>) {
+    /// Adds context in-place.
+    pub fn push_context(&mut self, context: impl Into<String>) {
         self.context.push(context.into());
     }
 
-    /// Add context and return itself.
+    /// Adds context and returns itself.
     #[must_use = "returns a new error with additional context"]
-    pub fn push_context(mut self, context: impl Into<String>) -> Self {
-        self.add_context(context);
+    pub fn with_context(mut self, context: impl Into<String>) -> Self {
+        self.push_context(context);
         self
     }
 
@@ -46,9 +46,9 @@ impl Error {
     }
 }
 
-impl Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.message)
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.message)
     }
 }
 
@@ -70,11 +70,11 @@ pub trait Context<T> {
 
 impl<T, S: ToString> Context<T> for std::result::Result<T, S> {
     fn context(self, context: impl Into<String>) -> Result<T> {
-        self.map_err(|string| Error::new(string.to_string()).push_context(context))
+        self.map_err(|string| Error::new(string.to_string()).with_context(context))
     }
 
     fn with_context(self, f: impl FnOnce() -> String) -> Result<T> {
-        self.map_err(|string| Error::new(string.to_string()).push_context(f()))
+        self.map_err(|string| Error::new(string.to_string()).with_context(f()))
     }
 }
 
