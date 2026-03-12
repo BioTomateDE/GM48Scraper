@@ -1,7 +1,6 @@
-use colored_print::ceprintln;
-
 use crate::error::{Context, Result, bail};
-use std::{fmt::Display, io::Cursor};
+use colored_print::ceprintln;
+use std::{fmt, io::Cursor};
 
 /// Taken from <https://forum.gamemaker.io/index.php?threads/summary-of-gms-file-extensions.82460/>
 /// and extended a little bit.
@@ -9,7 +8,7 @@ const KNOWN_GM_EXTENSIONS: &[&str] = &[
     "gm81", "gmez", "gml", "gmk", "gmx", "gmz", "yy", "yymp", "yymps", "yyp", "yyz",
 ];
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Kind {
     Zip,
     Rar,
@@ -17,15 +16,15 @@ pub enum Kind {
     PackedExe,
 }
 
-impl Display for Kind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Kind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let string = match self {
-            Kind::Zip => "ZIP",
-            Kind::Rar => "RAR",
-            Kind::SevenZip => "7-Zip",
-            Kind::PackedExe => "packed .exe",
+            Self::Zip => "ZIP",
+            Self::Rar => "RAR",
+            Self::SevenZip => "7-Zip",
+            Self::PackedExe => "packed .exe",
         };
-        write!(f, "{string}")
+        f.write_str(string)
     }
 }
 

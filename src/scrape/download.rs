@@ -7,7 +7,7 @@ use std::ffi::OsStr;
 use std::fs;
 use std::path::Path;
 
-pub async fn game(url: Url, file_path: &Path) -> Result<()> {
+pub async fn download_game(url: Url, file_path: &Path) -> Result<()> {
     let ctx = || format!("downloading game from {url}");
 
     let resp = CLIENT.get(url.clone()).send().await.with_context(ctx)?;
@@ -38,14 +38,14 @@ pub async fn game(url: Url, file_path: &Path) -> Result<()> {
     match result {
         Ok(data_file_content) => {
             fs::write(file_path, data_file_content)
-                .with_context(|| format!("writing extracted data file to {file_path:?}"))
+                .with_context(|| format!("writing extracted data file to {}", file_path.display()))
                 .with_context(ctx)?;
 
             let name = file_path
                 .file_name()
                 .and_then(OsStr::to_str)
                 .unwrap_or("<unknown>");
-            cprintln!("%G:Sucessfully extracted data file to %g:{name}");
+            cprintln!("%G:Successfully extracted data file to %g:{name}");
         }
         Err(err) => {
             let err = err.chain();

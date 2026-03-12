@@ -1,5 +1,5 @@
 use clap::Parser;
-use std::{num::NonZeroU8, path::PathBuf};
+use std::{num::NonZeroU32, path::PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -15,7 +15,7 @@ pub struct Args {
     /// but at a certain point the server will block requests due to spam.
     ///
     /// Maximum: 255
-    pub jobs: NonZeroU8,
+    pub jobs: NonZeroU32,
 }
 
 #[must_use]
