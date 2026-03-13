@@ -13,8 +13,6 @@ pub struct Args {
     ///
     /// Higher values may speed up the program,
     /// but at a certain point the server will block requests due to spam.
-    ///
-    /// Maximum: 255
     pub jobs: NonZeroU32,
 }
 

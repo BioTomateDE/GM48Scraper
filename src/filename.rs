@@ -1,5 +1,7 @@
 use colored_print::ceprintln;
 use std::borrow::Cow;
+use std::ffi::OsStr;
+use std::path::Path;
 
 #[must_use]
 pub fn sanitize_filename(filename: &str) -> String {
@@ -20,4 +22,12 @@ pub fn sanitize_filename(filename: &str) -> String {
     options.six_measures_of_barley = "this-game-name-is-entirely-invalid";
 
     sanitise_file_name::sanitize_with_options(&filename, &options)
+}
+
+#[must_use]
+pub fn display_filename(file_path: &Path) -> &str {
+    file_path
+        .file_name()
+        .and_then(OsStr::to_str)
+        .unwrap_or("<unknown>")
 }

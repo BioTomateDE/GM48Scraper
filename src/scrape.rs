@@ -66,6 +66,6 @@ async fn handle_game(game_url: Url, dir: PathBuf) -> Result<()> {
         return Ok(());
     }
 
-    let download_url = Url::parse(&format!("{game_url}/download/windows"))?;
-    download_game(download_url, &path).await
+    let url = format!("{game_url}/download/windows");
+    download_game(&url, &path).await.with_context(|| format!("downloading game from {url}"))
 }
