@@ -94,17 +94,12 @@ fn extract_file(archive_data: &[u8], file_path: &str) -> Result<Vec<u8>> {
 
 #[must_use]
 fn get_filename(file_path: &str) -> &str {
-    last_part(file_path, '/')
+    file_path.split('/').next_back().unwrap_or(file_path)
 }
 
 #[must_use]
 fn get_extension(filename: &str) -> &str {
-    last_part(filename, '.')
-}
-
-#[must_use]
-fn last_part(string: &str, delimiter: char) -> &str {
-    string.split(delimiter).next_back().unwrap_or(string)
+    filename.split('.').next_back().unwrap_or("")
 }
 
 fn print_structure(files: &[String], kind: Kind) {
