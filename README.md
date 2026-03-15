@@ -29,6 +29,8 @@ will dump all GameMaker data files. However, you can pass a command line
 argument to the CLI in order to customize your output directory. Example:
 `./gm48-scraper ~/Documents/gamemaker_datafiles/`
 
+You can also specify the `--jobs` flag which controls how many files will be downloaded concurrently. This speeds up download time but the server might temporarily blacklist you if the number is too high.
+
 ## What's the purpose of this
 
 The reason I made this program is to get lots of GameMaker data files
@@ -44,7 +46,7 @@ This program uses the standard [reqwest](https://crates.io/crates/reqwest) user
 agent. If the website wanted to block scrapers like this, they could easily
 detect a non-browser user agent.
 
-Also, their [`robots.txt`](https://dotnet.48/robots.txt) file allows scraping
+Also, their [`robots.txt`](https://gm48.net/robots.txt) file allows scraping
 for all user-agents anyway.
 
 That being said: **Use it on your own risk.** I take no responsibility for
