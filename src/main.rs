@@ -1,18 +1,12 @@
-#![warn(clippy::cargo)]
-#![warn(clippy::nursery)]
-#![warn(clippy::pedantic)]
-//
-// Out of my control.
-#![allow(clippy::multiple_crate_versions)]
-//
-// False positives for `colored-print` macros.
-#![allow(clippy::literal_string_with_formatting_args)]
-//
-// It doesn't know that GameMaker is a real term that doesn't need backticks.
-#![allow(clippy::doc_markdown)]
-//
-// `path.display()`? i ain't typing allat
-#![allow(clippy::unnecessary_debug_formatting)]
+#![forbid(unsafe_code)]
+#![warn(clippy::cargo, clippy::nursery, clippy::pedantic)]
+#![allow(
+    // Out of my control.
+    clippy::multiple_crate_versions,
+
+    // False positives for `colored-print` macros.
+    clippy::literal_string_with_formatting_args,
+)]
 
 mod archive;
 mod cli;
@@ -28,6 +22,7 @@ async fn main() {
     println!("Let the programme commence forth.");
 
     if let Err(error) = scrape::scrape_data_files(args).await {
-        error.print_exit();
+        error.print();
+        std::process::exit(1);
     }
 }

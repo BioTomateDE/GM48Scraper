@@ -1,5 +1,7 @@
-use crate::error::{Context, Result};
 use reqwest::Url;
+
+use crate::error::Context;
+use crate::error::Result;
 
 /// Get the absolute URL, relative to <https://gm48.net>.
 /// The `relative_url` should not start with a slash (`/`).

@@ -1,6 +1,11 @@
-use crate::error::{Context, Result, bail};
+use std::fmt;
+use std::io::Cursor;
+
 use colored_print::ceprintln;
-use std::{fmt, io::Cursor};
+
+use crate::error::Context;
+use crate::error::Result;
+use crate::error::bail;
 
 /// Taken from <https://forum.gamemaker.io/index.php?threads/summary-of-gms-file-extensions.82460/>
 /// and extended a little bit.
@@ -44,8 +49,8 @@ pub fn find_data_file(archive_data: &[u8], kind: Kind) -> Result<Vec<u8>> {
         if KNOWN_GM_EXTENSIONS.contains(&extension.as_str()) {
             // Uploader has a skill issue, nothing I can do about that
             bail!(
-                "Found incorrectly uploaded GameMaker project \
-                in Windows download (detected by file {filename:?})"
+                "Found incorrectly uploaded GameMaker project in Windows download (detected by \
+                 file {filename:?})"
             );
         }
 

@@ -16,7 +16,12 @@ maintenance.status = "passively-maintained"
 [dependencies]
 clap = { version = "4.6", features = ["derive"] }
 colored-print = "0.1"
+
+# I really don't like this dependency because of its horrid
+# build script, but it works flawlessly for SFX archives.
+# Feel free to replace this dependency when there is Rust-native solution.
 compress-tools = "0.15"
+
 futures = "0.3"
 humansize = "2.1"
 reqwest = "0.13"

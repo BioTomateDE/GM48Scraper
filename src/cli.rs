@@ -1,5 +1,7 @@
+use std::num::NonZeroU32;
+use std::path::PathBuf;
+
 use clap::Parser;
-use std::{num::NonZeroU32, path::PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]

@@ -1,7 +1,8 @@
-use colored_print::ceprintln;
 use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::path::Path;
+
+use colored_print::ceprintln;
 
 #[must_use]
 pub fn sanitize_filename(filename: &str) -> String {

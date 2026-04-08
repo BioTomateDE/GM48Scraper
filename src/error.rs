@@ -1,4 +1,5 @@
-use std::fmt::{self, Write};
+use std::fmt;
+use std::fmt::Write;
 
 #[derive(Debug, Clone)]
 pub struct Error {
@@ -9,10 +10,7 @@ pub struct Error {
 impl Error {
     #[must_use]
     pub const fn new(message: String) -> Self {
-        Self {
-            message,
-            context: Vec::new(),
-        }
+        Self { message, context: Vec::new() }
     }
 
     /// Adds context in-place.
@@ -37,12 +35,7 @@ impl Error {
     }
 
     pub fn print(&self) {
-        colored_print::ceprintln!("Error: %R:{}", self.chain());
-    }
-
-    pub fn print_exit(&self) -> ! {
-        self.print();
-        std::process::exit(1);
+        ceprintln!("Error: %R:{}", self.chain());
     }
 }
 
@@ -97,3 +90,4 @@ macro_rules! bail {
 }
 
 pub(crate) use bail;
+use colored_print::ceprintln;

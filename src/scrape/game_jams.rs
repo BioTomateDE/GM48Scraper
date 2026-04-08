@@ -1,9 +1,13 @@
-use crate::error::{Result, bail};
-use crate::html::{extract_href, get_html};
-use crate::url::get_url;
+use std::sync::LazyLock;
+
 use reqwest::Url;
 use scraper::Selector;
-use std::sync::LazyLock;
+
+use crate::error::Result;
+use crate::error::bail;
+use crate::html::extract_href;
+use crate::html::get_html;
+use crate::url::get_url;
 
 static SELECTOR: LazyLock<Selector> = LazyLock::new(make_selector);
 
