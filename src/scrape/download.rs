@@ -1,11 +1,16 @@
-use crate::archive;
-use crate::error::{Context, Result};
-use crate::filename::display_filename;
-use crate::scrape::CLIENT;
-use colored_print::{ceprintln, cprintln};
-use reqwest::{StatusCode, Url};
 use std::fs;
 use std::path::Path;
+
+use colored_print::ceprintln;
+use colored_print::cprintln;
+use reqwest::StatusCode;
+use reqwest::Url;
+
+use crate::archive;
+use crate::error::Context;
+use crate::error::Result;
+use crate::filename::display_filename;
+use crate::scrape::CLIENT;
 
 pub async fn download_game(raw_url: &str, file_path: &Path) -> Result<()> {
     let url = Url::parse(raw_url).context("Invalid Game Download URL {raw_url:?}")?;
@@ -28,8 +33,9 @@ pub async fn download_game(raw_url: &str, file_path: &Path) -> Result<()> {
 
     match result {
         Ok(data_file_content) => {
-            fs::write(file_path, data_file_content)
-                .with_context(|| format!("writing extracted data file to {file_path:?}"))?;
+            fs::write(file_path, data_file_content).with_context(|| {
+                format!("writing extracted data file to {}", file_path.display())
+            })?;
 
             let name: &str = display_filename(file_path);
             cprintln!("%G:Successfully extracted data file to %g:{name}");

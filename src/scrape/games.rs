@@ -1,9 +1,12 @@
-use crate::error::Result;
-use crate::html::{extract_href, get_html};
+use std::sync::LazyLock;
+
 use colored_print::cprintln;
 use reqwest::Url;
 use scraper::Selector;
-use std::sync::LazyLock;
+
+use crate::error::Result;
+use crate::html::extract_href;
+use crate::html::get_html;
 
 static SELECTOR: LazyLock<Selector> = LazyLock::new(make_selector);
 

@@ -1,7 +1,11 @@
-use crate::error::{Context, Result};
+use reqwest::Response;
+use reqwest::Url;
+use scraper::ElementRef;
+use scraper::Html;
+
+use crate::error::Context;
+use crate::error::Result;
 use crate::scrape::CLIENT;
-use reqwest::{Response, Url};
-use scraper::{ElementRef, Html};
 
 /// Send a GET request to the specified URL
 /// and then extract the HTML of the response.

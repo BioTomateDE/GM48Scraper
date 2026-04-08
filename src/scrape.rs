@@ -2,21 +2,28 @@ mod download;
 mod game_jams;
 mod games;
 
-use crate::error::{Context, Result};
-use crate::filename::sanitize_filename;
-use crate::scrape::games::scrape_games;
-use crate::{cli, url};
-use colored_print::cprintln;
-use download::download_game;
-use futures::stream::{self, StreamExt};
-use reqwest::{Client, Url};
 use std::path::PathBuf;
 use std::sync::LazyLock;
+
+use colored_print::cprintln;
+use download::download_game;
+use futures::stream;
+use futures::stream::StreamExt;
+use reqwest::Client;
+use reqwest::Url;
 use url::extract_meta;
+
+use crate::cli;
+use crate::error::Context;
+use crate::error::Result;
+use crate::filename::sanitize_filename;
+use crate::scrape::games::scrape_games;
+use crate::url;
 
 /// A reusable `reqwest` client instance.
 pub static CLIENT: LazyLock<Client> = LazyLock::new(Client::new);
 
+/// Scrapes all data files of the GM48 game jam.
 pub async fn scrape_data_files(args: cli::Args) -> Result<()> {
     std::fs::create_dir_all(&args.directory).context("creating output directory")?;
 
@@ -62,10 +69,12 @@ async fn handle_game(game_url: Url, dir: PathBuf) -> Result<()> {
     let path = dir.join(filename);
 
     if path.exists() {
-        //cprintln!("%y:Skipping download for {url}: %Y:File already exists");
+        // cprintln!("%y:Skipping download for {url}: %Y:File already exists");
         return Ok(());
     }
 
     let url = format!("{game_url}/download/windows");
-    download_game(&url, &path).await.with_context(|| format!("downloading game from {url}"))
+    download_game(&url, &path)
+        .await
+        .with_context(|| format!("downloading game from {url}"))
 }
