@@ -3,6 +3,8 @@
 A command line interface for scraping GameMaker data files from the
 [GM48 Game Jam](https://gm48.net).
 
+> This project migrated to [Codeberg](https://codeberg.org/BioTomateDE/GM48Scraper).
+
 ## Installation Guide
 
 1. Go to "Releases" on the right side
