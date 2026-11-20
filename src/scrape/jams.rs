@@ -1,22 +1,17 @@
-use std::sync::LazyLock;
-
-use reqwest::Url;
-use scraper::Selector;
-
-use crate::error::Result;
-use crate::error::bail;
 use crate::html::extract_href;
 use crate::html::get_html;
-use crate::url::get_url;
+use crate::url::BASE_URL;
+use anyhow::Result;
+use anyhow::bail;
+use reqwest::Url;
+use scraper::Selector;
+use std::sync::LazyLock;
 
-static SELECTOR: LazyLock<Selector> = LazyLock::new(make_selector);
-
-fn make_selector() -> Selector {
-    Selector::parse("#jamModal .modal-body > .list-group > a").unwrap()
-}
+const SELECTOR_RAW: &str = "#jamModal .modal-body > .list-group > a";
+static SELECTOR: LazyLock<Selector> = LazyLock::new(|| Selector::parse(SELECTOR_RAW).unwrap());
 
 pub async fn scrape() -> Result<Vec<Url>> {
-    let url = get_url("game-jams/top-down/games")?;
+    let url = BASE_URL.join("game-jams/top-down/games")?;
     let html = get_html(url).await?;
 
     let mut game_jam_links = Vec::new();

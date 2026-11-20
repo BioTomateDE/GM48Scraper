@@ -1,38 +1,36 @@
 mod download;
-mod game_jams;
 mod games;
+mod jams;
 
-use std::path::PathBuf;
-use std::sync::LazyLock;
-
+use crate::error::print_error;
+use crate::filename::sanitize_filename;
+use crate::scrape::games::scrape_games;
+use crate::url;
+use anyhow::Context;
+use anyhow::Result;
+use anyhow::anyhow;
 use colored_print::cprintln;
 use download::download_game;
 use futures::stream;
 use futures::stream::StreamExt;
 use reqwest::Client;
 use reqwest::Url;
+use std::path::Path;
+use std::path::PathBuf;
+use std::sync::LazyLock;
 use url::extract_meta;
-
-use crate::cli;
-use crate::error::Context;
-use crate::error::Result;
-use crate::filename::sanitize_filename;
-use crate::scrape::games::scrape_games;
-use crate::url;
 
 /// A reusable `reqwest` client instance.
 pub static CLIENT: LazyLock<Client> = LazyLock::new(Client::new);
 
 /// Scrapes all data files of the GM48 game jam.
-pub async fn scrape_data_files(args: cli::Args) -> Result<()> {
-    std::fs::create_dir_all(&args.directory).context("creating output directory")?;
+pub async fn scrape_data_files(args: crate::Args) -> Result<()> {
+    create_dir(&args.output_dir)?;
 
-    let game_jam_urls = game_jams::scrape()
-        .await
-        .context("getting list of game jams")?;
+    let game_jam_urls = jams::scrape().await.context("Failed fetching list of game jams")?;
     cprintln!("%C:Got {} game jams.", game_jam_urls.len());
 
-    let batch_size = u32::from(args.jobs) as usize;
+    let batch_size = usize::from(args.jobs.get());
 
     // TODO: handle errors?
     let mut game_urls: Vec<Url> = stream::iter(game_jam_urls)
@@ -42,11 +40,11 @@ pub async fn scrape_data_files(args: cli::Args) -> Result<()> {
         .flat_map(stream::iter)
         .collect()
         .await;
-    game_urls.sort();
-    cprintln!("%C:Got %b^{}%_^ games in total.", game_urls.len());
+    game_urls.sort_unstable();
+    cprintln!("%C:Got %b^{}%_^ games in total.\n", game_urls.len());
 
     let _: Vec<()> = stream::iter(game_urls)
-        .map(|url| handle_game_wrapper(url, args.directory.clone()))
+        .map(|url| handle_game(url, args.output_dir.clone()))
         .buffer_unordered(batch_size)
         .collect()
         .await;
@@ -55,13 +53,13 @@ pub async fn scrape_data_files(args: cli::Args) -> Result<()> {
     Ok(())
 }
 
-async fn handle_game_wrapper(url: Url, dir: PathBuf) {
-    if let Err(e) = handle_game(url, dir).await {
-        e.print();
+async fn handle_game(url: Url, dir: PathBuf) {
+    if let Err(e) = handle_game_impl(url, dir).await {
+        print_error(&e);
     }
 }
 
-async fn handle_game(game_url: Url, dir: PathBuf) -> Result<()> {
+async fn handle_game_impl(game_url: Url, dir: PathBuf) -> Result<()> {
     let (jam, game) = extract_meta(&game_url)?;
     let jam = sanitize_filename(jam);
     let game = sanitize_filename(game);
@@ -76,5 +74,13 @@ async fn handle_game(game_url: Url, dir: PathBuf) -> Result<()> {
     let url = format!("{game_url}/download/windows");
     download_game(&url, &path)
         .await
-        .with_context(|| format!("downloading game from {url}"))
+        .with_context(|| format!("Failed to download game from {url}"))
+}
+
+fn create_dir(path: &Path) -> Result<()> {
+    match std::fs::create_dir(path) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
+        Err(e) => Err(anyhow!("Failed to create directory `{}`", path.display()).context(e)),
+    }
 }

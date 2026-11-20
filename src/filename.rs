@@ -27,8 +27,5 @@ pub fn sanitize_filename(filename: &str) -> String {
 
 #[must_use]
 pub fn display_filename(file_path: &Path) -> &str {
-    file_path
-        .file_name()
-        .and_then(OsStr::to_str)
-        .unwrap_or("<unknown>")
+    file_path.file_name().and_then(OsStr::to_str).unwrap_or("<unknown>")
 }

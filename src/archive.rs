@@ -1,11 +1,9 @@
+use anyhow::Context;
+use anyhow::Result;
+use anyhow::bail;
+use colored_print::ceprintln;
 use std::fmt;
 use std::io::Cursor;
-
-use colored_print::ceprintln;
-
-use crate::error::Context;
-use crate::error::Result;
-use crate::error::bail;
 
 /// Taken from <https://forum.gamemaker.io/index.php?threads/summary-of-gms-file-extensions.82460/>
 /// and extended a little bit.
@@ -39,19 +37,16 @@ pub fn find_data_file(archive_data: &[u8], kind: Kind) -> Result<Vec<u8>> {
 
     for file_path in &files {
         let filename = get_filename(file_path);
-        let extension = get_extension(filename).to_ascii_lowercase();
 
         // Hey, that's the one we want!
         if filename == "data.win" {
             return extract_file(archive_data, file_path);
         }
 
+        let extension = get_extension(filename).to_ascii_lowercase();
         if KNOWN_GM_EXTENSIONS.contains(&extension.as_str()) {
             // Uploader has a skill issue, nothing I can do about that
-            bail!(
-                "Found incorrectly uploaded GameMaker project in Windows download (detected by \
-                 file {filename:?})"
-            );
+            bail!("Found incorrectly uploaded GameMaker project in Windows download (detected by file {filename:?})");
         }
 
         if kind == Kind::PackedExe && filename == "data" {
@@ -73,7 +68,7 @@ pub fn find_data_file(archive_data: &[u8], kind: Kind) -> Result<Vec<u8>> {
         };
         let inner_archive = extract_file(archive_data, file_path)?;
         return find_data_file(&inner_archive, kind)
-            .with_context(|| format!("extracting inner {kind} archive {file_path:?}"));
+            .with_context(|| format!("Failed to extract inner {kind} archive {file_path:?}"));
     }
 
     // Couldn't find data.win or inner archive.
@@ -83,15 +78,14 @@ pub fn find_data_file(archive_data: &[u8], kind: Kind) -> Result<Vec<u8>> {
 }
 
 fn list_files(archive_data: &[u8]) -> Result<Vec<String>> {
-    compress_tools::list_archive_files(&mut Cursor::new(archive_data))
-        .context("listing archive files")
+    compress_tools::list_archive_files(&mut Cursor::new(archive_data)).context("Failed to list archive files")
 }
 
 fn extract_file(archive_data: &[u8], file_path: &str) -> Result<Vec<u8>> {
     let mut cursor = Cursor::new(archive_data);
     let mut output = Vec::new();
 
-    compress_tools::uncompress_archive_file(&mut cursor, &mut output, file_path)
+    let _: usize = compress_tools::uncompress_archive_file(&mut cursor, &mut output, file_path)
         .with_context(|| format!("Failed to extract file {file_path:?}"))?;
 
     Ok(output)

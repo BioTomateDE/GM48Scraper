@@ -1,33 +1,28 @@
+use crate::scrape::CLIENT;
+
+use anyhow::Context;
+use anyhow::Result;
 use reqwest::Response;
 use reqwest::Url;
 use scraper::ElementRef;
 use scraper::Html;
 
-use crate::error::Context;
-use crate::error::Result;
-use crate::scrape::CLIENT;
-
-/// Send a GET request to the specified URL
-/// and then extract the HTML of the response.
+/// Sends a GET request to the specified URL and then extracts the HTML of the response.
 pub async fn get_html(url: Url) -> Result<Html> {
     let text: String = CLIENT
         .get(url.clone())
         .send()
         .await
         .and_then(Response::error_for_status)
-        .with_context(|| format!("sending GET request to {url}"))?
+        .with_context(|| format!("Failed to send GET request to {url}"))?
         .text()
         .await
-        .with_context(|| format!("getting text response body of GET request to {url}"))?;
-    let html = Html::parse_document(&text);
-    Ok(html)
+        .with_context(|| format!("Failed to get text response body of GET request to {url}"))?;
+    Ok(Html::parse_document(&text))
 }
 
-/// Get the Href URL of an `<a>` HTML node.
+/// Gets the `href` of an `<a>` HTML tag and parses it as a URL.
 pub fn extract_href(element: ElementRef) -> Result<Url> {
-    let href: &str = element
-        .attr("href")
-        .context("Link node <a> does not contain href")?;
-    let url = Url::parse(href)?;
-    Ok(url)
+    let href: &str = element.attr("href").context("Missing href in HTML hyperlink tag")?;
+    Url::parse(href).with_context(|| format!("Invalid href URL in HTML hyperlink tag: {href:?}"))
 }

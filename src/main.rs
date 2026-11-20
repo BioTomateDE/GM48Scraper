@@ -1,28 +1,40 @@
 #![forbid(unsafe_code)]
-#![warn(clippy::cargo, clippy::nursery, clippy::pedantic)]
-#![allow(
-    // Out of my control.
-    clippy::multiple_crate_versions,
-
-    // False positives for `colored-print` macros.
-    clippy::literal_string_with_formatting_args,
-)]
 
 mod archive;
-mod cli;
 mod error;
 mod filename;
 mod html;
 mod scrape;
 mod url;
 
+use crate::error::print_error;
+use crate::scrape::scrape_data_files;
+use clap::Parser;
+use std::num::NonZeroU8;
+use std::path::PathBuf;
+
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+pub struct Args {
+    /// Directory the data files will be downloaded to.
+    #[arg(short, long, default_value = "gm48-datafiles")]
+    pub output_dir: PathBuf,
+
+    /// How many requests can be sent at once.
+    ///
+    /// Higher values may speed up the program,
+    /// but at a certain point the server will block requests due to spam.
+    #[arg(short, long, default_value = "6")]
+    pub jobs: NonZeroU8,
+}
+
 #[tokio::main]
 async fn main() {
-    let args = cli::parse();
+    let args = Args::parse();
     println!("Let the programme commence forth.");
 
-    if let Err(error) = scrape::scrape_data_files(args).await {
-        error.print();
+    if let Err(error) = scrape_data_files(args).await {
+        print_error(&error);
         std::process::exit(1);
     }
 }

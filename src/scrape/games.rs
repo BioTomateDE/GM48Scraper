@@ -1,18 +1,13 @@
-use std::sync::LazyLock;
-
+use crate::html::extract_href;
+use crate::html::get_html;
+use anyhow::Result;
 use colored_print::cprintln;
 use reqwest::Url;
 use scraper::Selector;
+use std::sync::LazyLock;
 
-use crate::error::Result;
-use crate::html::extract_href;
-use crate::html::get_html;
-
-static SELECTOR: LazyLock<Selector> = LazyLock::new(make_selector);
-
-fn make_selector() -> Selector {
-    Selector::parse("#games .single-game > a").unwrap()
-}
+const SELECTOR_RAW: &str = "#games .single-game > a";
+static SELECTOR: LazyLock<Selector> = LazyLock::new(|| Selector::parse(SELECTOR_RAW).unwrap());
 
 pub async fn scrape_games(jam_url: Url) -> Result<Vec<Url>> {
     let html = get_html(jam_url.clone()).await?;
