@@ -1,33 +1,30 @@
 # GM48Scraper
 
-A command line interface for scraping GameMaker data files from the
-[GM48 Game Jam](https://gm48.net).
+A command line interface for scraping GameMaker data files from the [GM48 Game Jam](https://gm48.net).
 
 ## Installation Guide
 
 1. Go to "Releases" on the right side
 2. Download the latest release for your platform
 
-If there is no binary for your platform / architecture, you need to build it
-from source (see below).
+If there is no binary for your platform / architecture, you need to build it from source (see below).
 
 ## Compilation Guide
 
 1. Install the [Rust toolchain](https://rustup.rs)
 2. Open a terminal and navigate to some temporary directory
-3. Clone this Git repository
-   (`git clone https://github.com/BioTomateDE/GM48Scraper`)
+3. Clone this Git repository (`git clone https://github.com/BioTomateDE/GM48Scraper`)
 4. Build the binary (`cargo build -r`)
-5. Execute the binary (`./target/release/gm48-scraper.exe`)
+5. Execute the binary (`./target/release/gm48scraper`)
 
 ## Usage
 
-Open a terminal and execute the binary, for example: `~/Downloads/gm48-scraper`.
+Open a terminal and execute the binary, for example: `~/Downloads/gm48scraper`.
 
-By default, the program creates a directory called `gm48_datafiles` where it
+By default, the program creates a directory called `gm48-datafiles` where it
 will dump all GameMaker data files. However, you can pass a command line
-argument to the CLI in order to customize your output directory. Example:
-`./gm48-scraper ~/Documents/gamemaker_datafiles/`
+option to the CLI in order to customize your output directory. Example:
+`./gm48-scraper -o ~/Documents/gamemaker-datafiles/`
 
 You can also specify the `--jobs` flag which controls how many files will be downloaded concurrently.
 This speeds up download time but the server might temporarily blacklist you if the number is too high.

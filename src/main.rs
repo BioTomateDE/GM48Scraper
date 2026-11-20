@@ -37,4 +37,7 @@ async fn main() {
         print_error(&error);
         std::process::exit(1);
     }
+
+    #[cfg(windows)]
+    let _ = std::process::Command::new("pause").status();
 }
